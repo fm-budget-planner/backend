@@ -1,0 +1,69 @@
+name: Issue branch
+run-name: 'Issue branch #${{ github.event.issue.number }}'
+
+on:
+  issues:
+    types: [labeled]
+
+permissions: {}
+
+concurrency:
+  group: issue-branch-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  create-branch:
+    if: >-
+      github.repository == 'fm-budget-planner/backend' &&
+      github.event.label.name == 'ready-for-development' &&
+      github.actor == 'fabiomoggi' &&
+      github.triggering_actor == 'fabiomoggi'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Create or reuse the issue-linked branch
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const repository = `${owner}/${repo}`;
+            const allowed = user => user?.login === 'fabiomoggi' && user.id === 2768565;
+            const ensure = (condition, message) => { if (!condition) throw new Error(message); };
+            ensure(repository === 'fm-budget-planner/backend', 'Unexpected repository');
+            ensure(context.eventName === 'issues' && context.payload.action === 'labeled',
+              'Only an issue label event may create a branch');
+            ensure(allowed(context.payload.sender) && context.actor === 'fabiomoggi'
+              && process.env.GITHUB_TRIGGERING_ACTOR === 'fabiomoggi', 'Unauthorized actor or rerun');
+            ensure(context.payload.label?.name === 'ready-for-development', 'Wrong readiness label');
+            const number = context.issue.number;
+            const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number: number });
+            ensure(!issue.pull_request && allowed(issue.user), 'Expected an issue created by fabiomoggi');
+            ensure(issue.state === 'open' && issue.labels.some(label => label.name === 'ready-for-development'),
+              'Issue must still be open and ready');
+
+            // Use the issue-number prefix so title changes never rename or reset existing work.
+            const { data: refs } = await github.rest.git.listMatchingRefs({ owner, repo, ref: `heads/${number}-` });
+            if (refs.length > 0) {
+              core.info(`Existing branches for issue #${number}; leaving them unchanged`);
+              return;
+            }
+            const slug = issue.title.normalize('NFKD').replace(/[^\x00-\x7F]/g, '').toLowerCase()
+              .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 100).replace(/_+$/g, '') || 'issue';
+            const branch = `${number}-${slug}`;
+            const { data: main } = await github.rest.git.getRef({ owner, repo, ref: 'heads/main' });
+            const result = await github.graphql(`
+              mutation($issue:ID!, $name:String!, $oid:GitObjectID!) {
+                createLinkedBranch(input:{issueId:$issue, name:$name, oid:$oid}) {
+                  issue { id }
+                  linkedBranch { ref { name target { oid } repository { nameWithOwner } } }
+                }
+              }`, { issue: issue.node_id, name: branch, oid: main.object.sha });
+            const created = result.createLinkedBranch;
+            ensure(created?.issue?.id === issue.node_id && created.linkedBranch?.ref?.name === branch
+              && created.linkedBranch.ref.target?.oid === main.object.sha
+              && created.linkedBranch.ref.repository.nameWithOwner === repository,
+              'Native linked-branch creation was not confirmed; inspect the issue before retrying');
+            core.info(`Created issue-linked branch: ${branch}`);

@@ -1,18 +1,20 @@
 # Backend foundation strategy
 
-**Status:** Strategy baseline and complete CI/CD path approved. The `fm-budget-planner/backend` checkout, origin, issue #1, and current issue branch were verified on September 19, 2026. The user has authorized documentation-only work on issue #1; future implementation in Codex inside Visual Studio Code requires explicit user authorization for the selected issue.
+**Status:** Strategy baseline and complete CI/CD path approved. Issue #1's documentation is merged. The user authorized issue #3 for issue-to-branch automation, association checks, and workflow validation; application code and deployment workflows remain outside that issue. Hosted activation is still pending user review and merge. Further implementation requires explicit user authorization for the selected issue.
 
 **Date:** September 16, 2026
 
-**Last updated:** September 19, 2026
+**Last updated:** September 20, 2026
 
 **Scope:** Budget Planner, one product built by a small team; domain requirements and model to be defined later.
 
 ## Collaboration and implementation authorization
 
+Before adding, modifying, or deleting code, including workflow configuration, present the exact proposed diff and explain the reasoning. Wait for explicit user approval of that diff before applying it. Authorization to work on an issue does not approve unseen code; subsequent code corrections also require approval of their exact diff.
+
 The user creates all GitHub issues and chooses the implementation scope. Codex implements only the explicitly authorized issue, on a branch associated with that issue. Codex must never create GitHub issues, commit, push, or merge; the user reviews changes and commits personally. Preserve existing and unrelated work, perform appropriate validation, summarize results and unresolved questions, and leave changes uncommitted. When decisions are needed, ask one question at a time and explain the trade-offs of each alternative. See the repository's [working instructions](../AGENTS.md).
 
-Manual issue creation is separate from the approved future issue-to-branch automation: an authorized teammate marks a user-created issue ready for development, and automation creates its linked branch from `main`. Readiness does not replace the user's explicit authorization for Codex to implement the issue. Preserve the technical automation decisions in the [CI/CD foundation](ci-cd-foundation.md); no automation is installed by issue #1.
+Manual issue creation is separate from the approved issue-to-branch automation: only `fabiomoggi` applies `ready-for-development` to a user-created issue, and automation creates its linked branch from `main` using `<issue-number>-<title_slug>`. Readiness does not replace the user's explicit authorization for Codex to implement the issue. For PR validation, a correctly named branch and its matching issue/PR link are sufficient; a manually created branch also qualifies without origin evidence. Preserve the technical automation decisions in the [CI/CD foundation](ci-cd-foundation.md); see [issue workflow setup](issue-workflow.md) for issue #3's implementation and activation requirements.
 
 ## 1. Purpose and constraints
 
@@ -30,7 +32,7 @@ Establish a backend foundation for an initial production release to early users.
 | Source repository owner | User-created [fm-budget-planner](https://github.com/fm-budget-planner) organization; GitHub Free selected, plan verification pending |
 | Repository name | `backend`; `fm-budget-planner/backend` checkout and origin verified |
 | Implementation workspace | Codex extension inside Visual Studio Code, working in the local backend repository checkout; standalone chat used for planning and handoff |
-| Change origin | The user creates every GitHub Issue and chooses scope; an authorized teammate marking it ready for development triggers creation of a linked working branch from `main`; Codex implementation requires explicit user authorization |
+| Change origin | The user creates every GitHub Issue and chooses scope; only `fabiomoggi` applying `ready-for-development` triggers creation of a linked working branch from `main`; Codex implementation requires explicit user authorization |
 | Language/runtime | TypeScript on Node.js; exact versions left to implementation |
 | Infrastructure | Firebase Authentication, Cloud Functions for Firebase, and Cloud Firestore |
 | Application-data access | All client reads and writes pass through backend functions |
@@ -196,6 +198,6 @@ These items are not included as additional gates in the initial strategy. Other 
 
 The implementation priority, once explicitly authorized through user-selected issues, is the CI/CD foundation before product requirements and solution design. Upcoming changes should enter through automated checks and the agreed staging-to-production release process from the beginning. Issue #1 records the documentation only.
 
-The selected platform is GitHub Actions with one public GitHub repository, separate Core and Firebase Runtime packages, and dedicated workflows. Both packages are consumed from the same revision. The selected policies include automated branch creation when an authorized teammate marks an issue ready for development, peer review and checks before merge, automatic staging for deployable changes, and manually requested production releases with designated approval. Separate SonarQube Cloud projects apply Sonar way independently, with applicable results required from first integration. Dependency review blocks newly introduced high/critical known vulnerabilities. Native secret protection, required actionlint checks, Dependabot alerts with issue-first remediation, and on-demand advisory Codex reviews complete the selected tooling additions. The user has approved the consolidated technical plan, while retaining issue creation, scope selection, and implementation authorization. No pipeline has been installed or run in this work. See [CI/CD foundation](ci-cd-foundation.md).
+The selected platform is GitHub Actions with one public GitHub repository, separate Core and Firebase Runtime packages, and dedicated workflows. Both packages are consumed from the same revision. The selected policies include automated branch creation when `fabiomoggi` applies `ready-for-development` to a user-created issue, peer review and checks before merge, automatic staging for deployable changes, and manually requested production releases with designated approval. Separate SonarQube Cloud projects apply Sonar way independently, with applicable results required from first integration. Dependency review blocks newly introduced high/critical known vulnerabilities. Native secret protection, required actionlint checks, Dependabot alerts with issue-first remediation, and on-demand advisory Codex reviews complete the selected tooling additions. The user has approved the consolidated technical plan, while retaining issue creation, scope selection, and implementation authorization. No pipeline has been installed or run in this work. See [CI/CD foundation](ci-cd-foundation.md).
 
 Domain-specific design remains deferred. Implementation mechanics should follow the agreed architecture rather than reopen settled strategic choices.
