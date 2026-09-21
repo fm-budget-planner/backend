@@ -22,7 +22,7 @@ Read these repository-local documents before implementation:
 
 Preserve the approved architecture and technical CI/CD decisions. The plans describe the intended foundation, not blanket authorization to implement it. These collaboration rules govern how Codex works on each explicitly authorized issue.
 
-The user manually creates issues and chooses scope. Separately, the approved issue-to-branch automation creates a linked branch from `main` when `fabiomoggi` applies `ready-for-development` to an existing issue. Only that account may trigger or rerun branch creation. Names use `<issue-number>-<title_slug>`, with spaces and punctuation converted to underscores. Opening an issue alone does not create a branch. The user accepts a matching branch name plus an existing issue and the PR’s matching closing link; manually created branches qualify. Do not add branch-origin artifacts or provenance/ancestry verification. Preserve this automation decision and its issue/branch/PR association checks; do not interpret it as permission for Codex to create issues or start implementation. See [issue workflow setup and verification](docs/issue-workflow.md) for implementation and activation details.
+The user manually creates issues and chooses scope. Separately, the approved issue-to-branch automation creates a linked branch from `main` when `fabiomoggi` applies `ready-for-development` to an existing issue. Only that account may trigger or rerun branch creation. Names use `<issue-number>-<title_slug>`, with spaces and punctuation converted to underscores. Opening an issue alone does not create a branch. The user accepts a matching branch name plus an existing issue and the PR’s matching closing link; manually created branches qualify. Do not add branch-origin artifacts or provenance/ancestry verification. Issue/branch/PR association is a manual review responsibility; the user removed the automated association workflow while retaining branch creation and actionlint. Preserve those decisions; do not interpret it as permission for Codex to create issues or start implementation. See [issue workflow setup and verification](docs/issue-workflow.md) for implementation and activation details.
 
 ## Validation and handoff
 
@@ -37,3 +37,7 @@ The user manually creates issues and chooses scope. Separately, the approved iss
 ## Issue #3 scope
 
 The user authorized [issue #3](https://github.com/fm-budget-planner/backend/issues/3): issue-to-branch automation, issue/branch/PR association checks, actionlint validation, targeted verification on GitHub, and setup documentation. Application code and deployment workflows are excluded. Issue #1's documentation-only restriction applies to issue #1, not this separately authorized work.
+
+## Issue #5 scope
+
+The user authorized [issue #5](https://github.com/fm-budget-planner/backend/issues/5), on `5-validate_issue_to_branch_automation`, to validate issue-to-branch automation and remove the automated issue-association workflow. Keep branch creation and actionlint; reviewers verify branch naming and the matching issue/PR link manually. Update the planning and setup documents consistently. This current instruction supersedes issue #3's earlier automated-association requirement. Do not add application code, dependencies, standalone automation scripts, or a custom workflow unit-test suite.
