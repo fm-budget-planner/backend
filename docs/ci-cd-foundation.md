@@ -1,6 +1,6 @@
 # CI/CD foundation
 
-**Status:** Complete technical CI/CD path approved. Issue #1's documentation is merged. The user authorized issue #3 for issue-to-branch automation, association checks, actionlint, and setup documentation. Its workflow source is being prepared for user review; hosted activation and repository enforcement remain pending. Application code and deployment workflows are excluded. GitHub Free is the selected plan; account-plan verification, provider eligibility, and usage limits remain setup checks. No new paid commitment is selected.
+**Status:** Complete technical CI/CD path approved. Issue #1's documentation is merged. Issue #3 installed the initial automation. The user authorized issue #5 to validate branch automation and remove the automated association check, retaining actionlint and manual issue/PR review. The initial workflows were merged in PR #4. The removal is scoped to issue #5; hosted branch verification and required-check enforcement remain setup tasks. Application code and deployment workflows are excluded. GitHub Free is the selected plan; account-plan verification, provider eligibility, and usage limits remain setup checks. No new paid commitment is selected.
 
 **Date:** September 16, 2026
 
@@ -18,7 +18,7 @@ Before adding, modifying, or deleting code, including workflow configuration, pr
 
 Implement only the explicitly authorized issue on a branch associated with it. Codex must never create GitHub issues, commit, push, or merge. The user reviews changes and commits personally. Preserve existing and unrelated work, perform appropriate validation, summarize results and unresolved questions, and leave changes uncommitted. When decisions are needed, ask one question at a time and explain the trade-offs of each alternative. Follow the repository's [working instructions](../AGENTS.md).
 
-Manual issue creation and scope selection are the user's responsibilities. The separately approved readiness-triggered branch automation remains part of this technical plan. A readiness action creates a linked branch; it does not replace explicit user authorization for Codex implementation. This distinction preserves the issue-association checks and all other approved CI/CD automation.
+Manual issue creation and scope selection are the user's responsibilities. The separately approved readiness-triggered branch automation remains part of this technical plan. A readiness action creates a linked branch; it does not replace explicit user authorization for Codex implementation. Issue/PR association remains a manual review responsibility. Preserve the branch automation, actionlint, and other approved CI/CD decisions.
 
 ### Implementation workspace
 
@@ -200,7 +200,7 @@ Every implementation must start with a GitHub Issue manually created by the user
 
 The same policy applies across both packages. A change spanning core and runtime can share one issue, branch, and PR when it represents one coherent piece of work.
 
-Add an automated required PR check that validates the branch naming convention, the existing user-created issue identified by the branch number, and the PR’s closing link to that same issue before allowing a merge into `main`. The user accepts the branch name as sufficient branch-to-issue association: correctly named manually created branches qualify. Do not require origin artifacts, workflow-run provenance, or proof of the initial base commit. The automation still creates new native issue-linked branches from current `main`.
+Reviewers manually verify the branch naming convention, the existing user-created issue identified by the branch number, and the PR’s closing link to that same issue before merging into `main`. The user removed the automated association workflow; do not require an `issue-association` status. The user accepts the branch name as sufficient branch-to-issue association: correctly named manually created branches qualify. Do not require origin artifacts, workflow-run provenance, or proof of the initial base commit. The automation still creates new native issue-linked branches from current `main`.
 
 GitHub supports [branches linked to issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-a-branch-for-an-issue), including branch creation through [GitHub CLI](https://cli.github.com/manual/gh_issue_develop). GitHub Actions supports issue activity triggers such as opening, assignment, and labeling. See [issue workflow events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#issues).
 
@@ -212,9 +212,9 @@ The issue must already have been created by the user with user-selected scope. B
 
 **Accepted trade-off:** one explicit readiness action in exchange for branches tied to accepted work and created closer to when development begins. Restricting the action to the user provides sole control while teammates wait for that readiness decision. The explicit `ready-for-development` label favors clarity over a shorter generic name.
 
-**Issue #3 implementation approach:** keep automation in YAML workflows with inline JavaScript through `actions/github-script`; invoke actionlint directly from the validation workflow. No standalone automation scripts or custom unit-test suite are needed for this issue. Validate workflow syntax with actionlint and behavior through targeted GitHub verification. This does not change the planned application tests.
+**Implementation approach (issues #3 and #5):** keep automation in YAML workflows with inline JavaScript through `actions/github-script`; invoke actionlint directly from the validation workflow. No standalone automation scripts or custom unit-test suite are needed for this issue. Validate workflow syntax with actionlint and behavior through targeted GitHub verification. This does not change the planned application tests.
 
-**Issue #3 decisions:** the user selected `fabiomoggi` as the only permitted actor, `ready-for-development` as the label, and `<issue-number>-<title_slug>` as the branch format. Spaces and punctuation become underscores in the lowercase title slug. Existing issue-number branches keep their names when an issue is renamed; the check does not require the slug to track later title edits. See [issue workflow setup and verification](issue-workflow.md) for naming and association checks, repeat-trigger behavior, required checks, and bootstrap limitations.
+**Issue #3 decisions:** the user selected `fabiomoggi` as the only permitted actor, `ready-for-development` as the label, and `<issue-number>-<title_slug>` as the branch format. Spaces and punctuation become underscores in the lowercase title slug. Existing issue-number branches keep their names when an issue is renamed; manual review does not require the slug to track later title edits. See [issue workflow setup and verification](issue-workflow.md) for manual association review, repeat-trigger behavior, actionlint, and setup requirements.
 
 ### Automation behavior
 
@@ -234,7 +234,7 @@ flowchart LR
     issue[User creates GitHub Issue and chooses scope] --> trigger[fabiomoggi applies ready-for-development]
     trigger --> branch[Create issue-linked working branch from main]
     branch --> change[Authorized implementation and linked pull request]
-    change --> checks[Issue association and applicable package checks]
+    change --> checks[Manual issue association review and applicable checks]
     checks --> review[Review and merge]
     review --> impact{Deployable inputs changed?}
     impact -->|No| complete[Complete applicable merged-revision checks]
@@ -278,7 +278,7 @@ This is the approved technical roadmap. The user selects and authorizes each imp
 | Workflow validation | Run required actionlint validation for workflow and lint-configuration changes |
 | Check coordination | Determine affected packages, include dependents, and report one required gate that verifies every applicable check passed |
 | Integration tests | Run necessary Firebase emulators against isolated test data within runtime validation |
-| Repository controls | Require valid issue/branch/PR association, successful checks, and one non-author approval before merging into `main` |
+| Repository controls | Require successful applicable checks and one non-author approval before merging into `main`; reviewers verify issue/branch/PR association manually |
 | Codex review | Enable on-demand advisory review with scoped guidance; keep automatic reviews off and preserve human approval and required CI checks |
 | Staging deployment | Deploy a validated merged revision affecting deployable backend inputs to the staging Firebase project automatically |
 | Production initiation | Manually request the latest staging-validated revision and fix its commit identifier for approval and deployment |
@@ -330,7 +330,7 @@ Use a protected GitHub production environment with designated required reviewers
 The following sequence describes future technical setup, not authorization to execute all steps. The user creates and scopes each issue and explicitly authorizes its implementation. Codex leaves each change validated, summarized, and uncommitted for user review and commit, and never pushes or merges. Issue #1 only records these plans and collaboration rules.
 
 1. For the authorized setup issue, continue from Codex in VS Code. Verify the user-created `fm-budget-planner` organization uses GitHub Free and confirm repository visibility and available access. Open its local checkout and recheck the remote, issue branch, and existing work. Identify team access, reviewers, and designated production approvers. Preserve the issue-first bootstrap sequence before implementation. Configure and verify native GitHub secret scanning and repository push protection. Enable Dependabot alerts, identify the triage owner and notification settings, and verify automatic update PRs are disabled.
-2. The user creates and scopes the automation setup issue. The user originates its linked branch using GitHub's existing mechanism before automation is installed. Issue #3 authorizes readiness-triggered branch automation, the required issue-association check, actionlint validation, and setup documentation, with only `fabiomoggi` permitted to trigger the automation. Leave changes uncommitted for the user. Follow the [bootstrap and activation steps](issue-workflow.md#bootstrap-and-activation) before claiming hosted checks or merge enforcement are operational.
+2. The user creates and scopes the automation setup issue. The user originates its linked branch using GitHub's existing mechanism before automation is installed. Issue #3 installed readiness-triggered branch automation and validation. Issue #5 removes automated association enforcement while retaining branch creation, actionlint, and manual issue/PR review; only `fabiomoggi` may trigger branch creation. Leave changes uncommitted for the user. Follow the [bootstrap and activation steps](issue-workflow.md#bootstrap-and-activation) before claiming hosted checks or merge enforcement are operational.
 3. Establish separate core and runtime packages, enforce inward dependencies, and add their dedicated workflows with dependency-aware check coordination. Add meaningful tests for the initial technical foundation, dependency review at the selected severity threshold, and required actionlint checks. Verify Sonar free-plan fit, configure separate package projects with Sonar way, and establish valid baseline analysis and coverage reporting before merging the Sonar integration. Enforce the required checks and one non-author review on `main` before normal merges begin. Keep product behavior outside this setup scope.
 4. Connect GitHub Actions to the separate staging Firebase project and prove automatic deployment and staging validation.
 5. Add manual production release selection and the distinct production approval gate, bound to the selected revision.
@@ -363,4 +363,4 @@ Verify that Sonar is required from its integration, that a failing or missing ap
 
 Verify that core checks run without Firebase, runtime consumes core from the same commit, and core production-code changes trigger consumer validation. Confirm that shared-input changes select the affected checks, applicable check failures cannot be hidden by skipped jobs, and documentation/test-only changes avoid cloud deployment when deployable inputs are unchanged.
 
-The foundation is operational only after an authorized readiness action creates a correctly linked branch, duplicate triggers preserve existing work, and a PR with an invalid branch name, nonexistent issue, or missing matching issue link is blocked. Opening an issue alone or an unauthorized readiness attempt must not create a branch. The real repository must enforce its remaining checks: a deliberately failing check blocks progression, a real candidate passes and deploys to staging, and production deployment remains gated until approval. Verify that a later merge cannot change the revision attached to an existing release request and that the intended approved revision is deployed. Exercise team-directed code recovery on a compatible test release. A production deployment continues to require the previously agreed team approval.
+The foundation is operational only after an authorized readiness action creates a correctly linked branch, duplicate triggers preserve existing work, and reviewers verify branch naming and the matching issue/PR link. There is no automated association gate. Opening an issue alone or an unauthorized readiness attempt must not create a branch. The real repository must enforce its remaining checks: a deliberately failing check blocks progression, a real candidate passes and deploys to staging, and production deployment remains gated until approval. Verify that a later merge cannot change the revision attached to an existing release request and that the intended approved revision is deployed. Exercise team-directed code recovery on a compatible test release. A production deployment continues to require the previously agreed team approval.

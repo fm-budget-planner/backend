@@ -1,6 +1,6 @@
 # Issue workflow setup and verification
 
-This implements the scope of [issue #3](https://github.com/fm-budget-planner/backend/issues/3). The [CI/CD plan](ci-cd-foundation.md) remains the technical baseline, and [AGENTS.md](../AGENTS.md) governs collaboration. Adding workflow files does not aci: add issue branch automation and association checks (#3)ctivate them on `main` or make a check required in repository settings. GitHub-hosted execution and repository enforcement must be verified after the user reviews, commits, pushes, and merges the bootstrap PR.
+This records [issue #5](https://github.com/fm-budget-planner/backend/issues/5): validate issue-to-branch automation and remove the association workflow, retaining branch creation, actionlint, and manual issue/PR association review. The [CI/CD plan](ci-cd-foundation.md) remains the technical baseline, and [AGENTS.md](../AGENTS.md) governs collaboration. The initial workflows were merged in [PR #4](https://github.com/fm-budget-planner/backend/pull/4); the user subsequently assigned removal of the association workflow to issue #5 on `5-validate_issue_to_branch_automation`. Changes take effect on GitHub after the user reviews, commits, pushes, and merges them. A workflow file does not make its check required in repository settings.
 
 ## Selected behavior
 
@@ -17,26 +17,21 @@ This implements the scope of [issue #3](https://github.com/fm-budget-planner/bac
 | File | Responsibility |
 |---|---|
 | [issue-branch.yml](../.github/workflows/issue-branch.yml) | Native linked-branch creation and per-issue serialization; preserves existing issue-number branches |
-| [issue-association.yml](../.github/workflows/issue-association.yml) | Trusted metadata-only PR validation; publishes `issue-association` on the PR head commit |
 | [automation-validation.yml](../.github/workflows/automation-validation.yml) | actionlint on every PR to `main` and push to `main`, including documentation-only changes |
 
-The issue workflows keep JavaScript inline in YAML using [actions/github-script](https://github.com/actions/github-script/tree/v8). The action provides its Node.js runtime and authenticated GitHub API client, so no standalone scripts, Node setup, npm installation, or custom unit-test suite are needed. The validation workflow invokes the checksum-pinned actionlint release directly through a short shell step. Application TypeScript/Node.js decisions remain unchanged.
+The branch workflow keeps JavaScript inline in YAML using [actions/github-script](https://github.com/actions/github-script/tree/v8). The action provides its Node.js runtime and authenticated GitHub API client, so no standalone scripts, Node setup, npm installation, or custom unit-test suite are needed. The validation workflow invokes the checksum-pinned actionlint release directly through a short shell step. Application TypeScript/Node.js decisions remain unchanged.
 
 The branch workflow uses `contents: write` and `issues: write`. It calls GitHub's `createLinkedBranch` mutation rather than creating an unrelated Git ref. No PAT, cloud credentials, application dependencies, commits, PRs, or automatic merges are needed.
 
-The association workflow uses `issues: read`, `pull-requests: read`, and `statuses: write`. It runs via `pull_request_target` using inline code from the trusted default-branch workflow; it does not check out repository code or execute PR code. It publishes the result on the PR's actual head SHA, not the base SHA. Stale events do not report success for a newer revision. API errors or invalid/missing issue associations fail the check.
+The ordinary validation workflow uses a read-only token without persisted checkout credentials or application secrets. It checks all workflow files with actionlint. It does not run custom automation unit tests. Actions are pinned to full commit IDs. Keep workflow permission changes under the agreed human review rules.
 
-The ordinary validation workflow uses a read-only token without persisted checkout credentials or application secrets. It checks all workflow files with actionlint. It does not run custom automation unit tests. Actions are pinned to full commit IDs. Keep workflow permission changes and association-check implementation under the agreed human review rules.
+## Manual issue/PR association review
 
-## Naming-based association
+The user accepts the branch name as sufficient branch-to-issue association. Reviewers verify a branch in this repository named `<issue-number>-<title_slug>`, an existing issue with that number created by the user, and a PR targeting `main` with a closing link to that same issue. Correctly named manually created branches qualify. The existing hyphenated bootstrap branch retains its documented exception.
 
-The user accepts the branch name as sufficient branch-to-issue association. The PR check requires a branch in this repository named `<issue-number>-<title_slug>`, an existing issue with that number created by `fabiomoggi`, and a PR targeting `main` with a GitHub-recognized closing link to the same issue. Correctly named manually created branches qualify. The issue may be open or closed; a PR number cannot substitute for an issue number.
+The slug uses lowercase letters/numbers separated by underscores and does not have to track later issue-title edits. Put `Closes #<issue-number>` in the PR body or use GitHub's Development association. Reviewers check this link before approving and merging; naming and linking mistakes do not produce an automated failure. Actionlint does not validate issue/PR associations.
 
-The slug must use lowercase letters/numbers separated by underscores. It does not have to track later edits to the issue title. Put `Closes #<issue-number>` in the PR body or use GitHub's Development association. A casual mention such as `Related to #7` is insufficient. The same-repository branch policy remains; fork branches do not qualify.
-
-No origin artifacts, retention policy, workflow history lookup, or base-commit ancestry verification is used. Native issue linking is performed when the automation creates a new branch, but is not required for a manually created branch to pass the PR check. The automation does not attempt to retroactively link or alter existing branches.
-
-A passing status reflects the association when it was checked. Body edits trigger another check; rerun validation if the Development association changes without an event. API errors or an interrupted check must not be treated as success.
+Native issue linking still happens when branch automation creates a new branch. The automation does not retroactively link or alter existing branches. No origin artifacts, retention policy, workflow-history lookup, or ancestry verification is required.
 
 References: [native issue branches](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-a-branch-for-an-issue) and [GraphQL issue API](https://docs.github.com/en/graphql/reference/issues).
 
@@ -44,14 +39,15 @@ References: [native issue branches](https://docs.github.com/en/issues/tracking-y
 
 The user created the bootstrap branch through issue #3's native Development control before this automation existed. The actual branch is `3-add-issue-to-branch-automation-and-issue-association-checks`, based on `60ca30af4fb597288051859f2bd86359a8233b52`. Preserve that existing branch. Its hyphenated title is a bootstrap exception; subsequent automated names use the selected underscores.
 
-1. Review the local changes and validation results, then commit and push the bootstrap branch yourself. Open its PR into `main` and link it with `Closes #3`.
-2. Confirm `automation-validation` runs on that PR and passes. The association and issue-label workflows execute from the default branch, so their first installation requires manual review of issue #3’s branch/PR link and the agreed non-author human approval. The existing hyphenated bootstrap branch is preserved for that initial PR; the installed naming check requires underscore slugs on subsequent branches. There is no hidden success fallback or generic bootstrap bypass.
-3. Merge the reviewed bootstrap PR yourself. Check the `main` validation run. Keep normal implementation merges paused until the required checks and protections below are active.
-4. Create the repository label `ready-for-development`. Confirm GitHub Actions permits the pinned checkout and github-script actions and the workflows’ explicit token permissions. No new secret is required.
-5. Check the repository's Actions event policy permits this metadata-only `pull_request_target` workflow. GitHub documents an evolving default policy for public repositories; do not assume that installing the file alone makes this event available. See [secure use of pull_request_target](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target).
-6. Use the next real user-created issue, or a verification issue you create and scope yourself, for the hosted checks below. Do not expect adding a label before workflow installation to replay afterward; remove/reapply it when ready.
-7. Protect `main` with a repository ruleset or branch protection requiring PRs, **one non-author human approval**, and the exact checks **`automation-validation`** and **`issue-association`**. Require branches to be up to date before merging, block force pushes/deletion, and apply protections without routine bypasses. Select GitHub Actions as the expected status source where available. Preserve any unrelated existing protections. A workflow/job name alone does not make a check required; an administrator must configure and verify this setting after the statuses have appeared.
-8. Before normal merges, verify a failed/missing association status and a failed validation result really block merging. Close issue #3 only when its agreed acceptance criteria, including hosted verification and enforcement, have been reviewed as complete. The linked bootstrap PR may automatically close it on merge; reopen it if activation remains outstanding, or explicitly track that remaining scope. Do not claim enforcement is active.
+The initial bootstrap PR is already merged. For this removal and remaining activation:
+
+1. Review the removal and documentation changes, then commit and push them yourself and open a PR into `main`. Link this PR to issue #5 with `Closes #5`. Confirm `automation-validation` passes, manually review the issue/branch/PR association, and obtain the agreed non-author human approval before merging.
+2. If `issue-association` was configured as a required status in a ruleset or branch protection, remove that requirement so deleting the workflow cannot leave PRs waiting for a status that will no longer run. Preserve unrelated protections. This repository change does not modify GitHub settings.
+3. After you merge, check the `main` validation run. The old association workflow runs from the default branch and may still run on the removal PR until that deletion is merged; it is not part of the retained design.
+4. Create `ready-for-development` if it does not exist. Confirm GitHub Actions permits the pinned checkout and github-script actions and their explicit token permissions. No new secret or `pull_request_target` event configuration is needed for the retained workflows.
+5. Use the next real user-created issue, or a verification issue you create and scope yourself, to verify branch creation and repeated triggers. Adding a label before workflow installation does not replay afterward; remove/reapply it when ready. Branch creation works independently of actionlint and branch protection.
+6. Protect `main` with a ruleset or branch protection requiring PRs, **one non-author human approval**, and **`automation-validation`**, plus any other applicable checks. Require branches to be up to date, block force pushes/deletion, and preserve unrelated protections. Verify a failed or missing required validation result blocks merging. These settings enforce merge policy; they do not enable branch creation.
+7. Review the revised scope and remaining hosted verification before treating activation as complete. Keep issue #5 open while its agreed work remains, or explicitly track any remaining scope before closing it; issue #3 records the historical installation. Codex does not create or edit issues on the user's behalf without authorization.
 
 No branch protection, labels, event policies, or repository settings are changed by the local implementation. Their activation is a user/admin handoff, not a claim of completed remote configuration. Preserve the existing restrictions on Codex committing, pushing, or merging.
 
@@ -66,7 +62,7 @@ git diff --check
 
 The validation workflow downloads actionlint 1.7.12 for its Ubuntu x64 runner, verifies the embedded SHA-256 checksum, and runs it against every YAML workflow file. It runs on all PRs to `main` and pushes to `main`, without path filters that could leave a required check missing. No repository script or package installation is used. Optional shellcheck checks depend on that tool being available to actionlint.
 
-actionlint checks workflow syntax and expressions; it does not establish correctness of the inline JavaScript, live permissions, event delivery, or association behavior. Validate those through the targeted GitHub checks below. No application tests or custom workflow unit tests are included in issue #3; the future application-test decisions remain in the CI/CD plan.
+actionlint checks workflow syntax and expressions; it does not establish correctness of the inline JavaScript, live permissions, event delivery, or branch-creation behavior. Validate those through the targeted GitHub checks below. No application tests or custom workflow unit tests are included in issue #5; the future application-test decisions remain in the CI/CD plan.
 
 Hosted verification, using only user-created issues and approved work:
 
@@ -76,11 +72,11 @@ Hosted verification, using only user-created issues and approved work:
 | A different user applies the label or reruns creation | No branch creation |
 | `fabiomoggi` labels a user-created open issue | Native linked branch at the current `main` if no issue-number branch exists |
 | Reapply the label after commits or title changes | Existing issue-number branches and commits unchanged; no additional branch |
-| PR from that branch with its correct issue link | `issue-association` succeeds on the PR head |
-| PR only mentions an issue, names a nonexistent issue, or uses an invalid/fork branch | Association fails; required-check configuration blocks merge |
-| Remove/change the PR's closing reference | Rerun the association check; it fails until repaired |
-| Correctly named manual branch with its matching issue/PR link | Association passes without proving how the branch was created |
+| PR issue/branch/link review | Reviewer verifies the association manually; no automated association status |
 | Invalid workflow syntax in an approved validation change | actionlint fails and `automation-validation` blocks merge |
-| API outage or interrupted applicable check | No passing result; required-check configuration blocks merge |
 
 A passing actionlint result does not prove live token permissions, hosted event delivery, or required-check enforcement. Record the corresponding run/PR links during activation. No application code or deployment workflow is included.
+
+## Verification recorded for issue #5
+
+GitHub reports the [Issue branch #5 run](https://github.com/fm-budget-planner/backend/actions/runs/35546386463) completed successfully. The branch `5-validate_issue_to_branch_automation` exists at `0bc1e68c82127eb7f3471fbc71993aa851fe684b`, the main revision used by that run. Issue #5 is open and carries `ready-for-development`. These observations verify the successful run and resulting branch reference; native Development-link visibility, repeat-trigger behavior, and other scenarios above remain to be checked. This inspection did not create or relabel an issue, rerun a workflow, or change repository protections.
